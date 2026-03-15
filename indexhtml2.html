@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tech Quiz — Pearl Mahajan</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0e1a;
+      --surface: #111827;
+      --surface2: #1a2235;
+      --border: #1e2d45;
+      --accent: #00d4ff;
+      --accent2: #7c3aed;
+      --green: #00e5a0;
+      --red: #ff4757;
+      --yellow: #ffd32a;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --card-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Space Grotesk', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      background-image:
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0,212,255,0.07) 0%, transparent 70%),
+        radial-gradient(ellipse 60% 40% at 80% 80%, rgba(124,58,237,0.06) 0%, transparent 60%);
+    }
+
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* ── LOADING SCREEN ── */
+    #loadingScreen {
+      min-height: 100vh;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 24px;
+    }
+    #loadingScreen.active { display: flex; }
+
+    .loader-ring {
+      width: 64px; height: 64px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loader-text {
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent);
+      font-size: 0.9rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:0.5;} 50%{opacity:1;} }
+
+    .loader-sub { color: var(--muted); font-size: 0.82rem; }
+
+    /* ── START SCREEN ── */
+    #startScreen {
+      min-height: 100vh;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 30px 16px;
+    }
+    #startScreen.active { display: flex; }
+
+    .start-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 48px 40px;
+      max-width: 500px;
+      width: 100%;
+      text-align: center;
+      box-shadow: var(--card-shadow), 0 0 0 1px rgba(0,212,255,0.08);
+      animation: slideUp 0.5s ease;
+    }
+    @keyframes slideUp { from{opacity:0;transform:translateY(20px);} to{opacity:1;transform:translateY(0);} }
+
+    .start-icon {
+      width: 72px; height: 72px;
+      background: linear-gradient(135deg, rgba(0,212,255,0.15), rgba(124,58,237,0.15));
+      border: 1px solid rgba(0,212,255,0.25);
+      border-radius: 20px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem;
+      margin: 0 auto 20px;
+    }
+
+    .start-card h1 {
+      font-size: 1.75rem; font-weight: 800; color: white;
+      margin-bottom: 8px;
+    }
+
+    .start-card h1 span { color: var(--accent); }
+
+    .start-card .sub { color: var(--muted); font-size: 0.92rem; margin-bottom: 32px; }
+
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 32px; }
+    .info-item {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px; padding: 14px;
+    }
+    .info-item .val { font-size: 1.4rem; font-weight: 800; color: var(--accent); font-family: 'JetBrains Mono', monospace; }
+    .info-item .key { font-size: 0.76rem; color: var(--muted); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .name-input-wrap { margin-bottom: 16px; text-align: left; }
+    .name-input-wrap label { display: block; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 8px; }
+    .name-input-wrap input {
+      width: 100%; background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 16px; color: var(--text);
+      font-family: 'Space Grotesk', sans-serif; font-size: 0.95rem;
+      outline: none; transition: border-color 0.2s;
+    }
+    .name-input-wrap input::placeholder { color: var(--muted); }
+    .name-input-wrap input:focus { border-color: var(--accent); }
+
+    .topic-select-wrap { margin-bottom: 28px; text-align: left; }
+    .topic-select-wrap label { display: block; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 8px; }
+    .topic-select-wrap select {
+      width: 100%; background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 16px; color: var(--text);
+      font-family: 'Space Grotesk', sans-serif; font-size: 0.95rem;
+      cursor: pointer; outline: none; transition: border-color 0.2s;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 16px center;
+    }
+    .topic-select-wrap select:focus { border-color: var(--accent); }
+
+    .btn-start {
+      width: 100%;
+      background: linear-gradient(135deg, var(--accent), #0099cc);
+      color: #0a0e1a;
+      border: none; border-radius: 12px; padding: 16px;
+      font-size: 1rem; font-weight: 800; font-family: 'Space Grotesk', sans-serif;
+      cursor: pointer; transition: all 0.2s;
+      letter-spacing: 0.5px;
+    }
+    .btn-start:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,212,255,0.3); }
+    .btn-start:active { transform: translateY(0); }
+
+    /* ── QUIZ SCREEN ── */
+    #quizScreen { padding: 24px 16px; min-height: 100vh; }
+    .quiz-container { max-width: 700px; margin: auto; }
+
+    .quiz-topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 20px; gap: 12px;
+    }
+    .q-counter {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem; font-weight: 700;
+      color: var(--accent); background: rgba(0,212,255,0.08);
+      border: 1px solid rgba(0,212,255,0.2);
+      padding: 6px 14px; border-radius: 20px;
+      letter-spacing: 1px;
+    }
+    .user-tag {
+      font-size: 0.82rem; color: var(--muted);
+      background: var(--surface); border: 1px solid var(--border);
+      padding: 5px 12px; border-radius: 20px;
+    }
+
+    .progress-wrap {
+      background: var(--surface); border-radius: 99px;
+      height: 4px; margin-bottom: 28px; overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 99px; transition: width 0.4s ease;
+      box-shadow: 0 0 8px rgba(0,212,255,0.5);
+    }
+
+    .question-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px; padding: 28px 28px 24px;
+      box-shadow: var(--card-shadow);
+      margin-bottom: 16px;
+    }
+    .q-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem; color: var(--accent);
+      text-transform: uppercase; letter-spacing: 2px;
+      margin-bottom: 12px;
+    }
+    .question-box h2 {
+      font-size: 1.1rem; font-weight: 600;
+      color: white; line-height: 1.6;
+    }
+
+    .options-list { display: flex; flex-direction: column; gap: 10px; margin-top: 22px; }
+
+    .opt-btn {
+      display: flex; align-items: center; gap: 14px;
+      background: var(--surface2);
+      border: 1.5px solid var(--border);
+      border-radius: 12px; padding: 14px 16px;
+      cursor: pointer; transition: all 0.18s;
+      text-align: left; font-size: 0.93rem;
+      color: var(--text); font-family: 'Space Grotesk', sans-serif;
+      width: 100%;
+    }
+    .opt-btn:hover:not(:disabled) {
+      border-color: var(--accent);
+      background: rgba(0,212,255,0.06);
+      transform: translateX(4px);
+    }
+    .opt-letter {
+      min-width: 32px; height: 32px; border-radius: 8px;
+      background: var(--border); color: var(--muted);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.82rem; flex-shrink: 0;
+      transition: all 0.18s;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .opt-btn.selected { border-color: var(--accent); background: rgba(0,212,255,0.08); }
+    .opt-btn.selected .opt-letter { background: var(--accent); color: #0a0e1a; }
+
+    /* Post-submit: no reveal */
+    .opt-btn.correct-opt  { border-color: var(--green); background: rgba(0,229,160,0.08); color: #a7f3d0; }
+    .opt-btn.correct-opt .opt-letter { background: var(--green); color: #0a0e1a; }
+    .opt-btn.wrong-opt    { border-color: var(--red); background: rgba(255,71,87,0.08); color: #fca5a5; }
+    .opt-btn.wrong-opt .opt-letter { background: var(--red); color: white; }
+    .opt-btn:disabled { cursor: default; transform: none; opacity: 0.7; }
+    .opt-btn.correct-opt:disabled, .opt-btn.wrong-opt:disabled { opacity: 1; }
+    .opt-icon { margin-left: auto; font-size: 1rem; flex-shrink: 0; }
+
+    /* Feedback banner */
+    .feedback {
+      border-radius: 12px; padding: 14px 18px;
+      font-weight: 600; font-size: 0.92rem;
+      display: none; align-items: center; gap: 10px; margin-bottom: 16px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .feedback.show { display: flex; }
+    .feedback.correct-fb { background: rgba(0,229,160,0.1); color: var(--green); border: 1px solid rgba(0,229,160,0.3); }
+    .feedback.wrong-fb   { background: rgba(255,71,87,0.1); color: var(--red); border: 1px solid rgba(255,71,87,0.3); }
+    .feedback.skip-fb    { background: rgba(255,211,42,0.08); color: var(--yellow); border: 1px solid rgba(255,211,42,0.2); }
+
+    .nav-row { display: flex; gap: 12px; justify-content: flex-end; margin-top: 4px; }
+    .btn-skip {
+      background: var(--surface2); color: var(--muted);
+      border: 1px solid var(--border); border-radius: 10px;
+      padding: 12px 22px; font-size: 0.9rem; font-weight: 600;
+      cursor: pointer; font-family: 'Space Grotesk', sans-serif;
+      transition: all 0.18s;
+    }
+    .btn-skip:hover { border-color: var(--yellow); color: var(--yellow); }
+    .btn-next {
+      background: linear-gradient(135deg, var(--accent), #0099cc);
+      color: #0a0e1a; border: none; border-radius: 10px;
+      padding: 12px 26px; font-size: 0.9rem; font-weight: 800;
+      cursor: pointer; font-family: 'Space Grotesk', sans-serif;
+      transition: all 0.2s;
+    }
+    .btn-next:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,212,255,0.3); }
+    .btn-next:disabled { opacity: 0.3; cursor: default; transform: none; box-shadow: none; }
+    .btn-submit-quiz {
+      background: linear-gradient(135deg, var(--green), #00b37a);
+      color: #0a0e1a; border: none; border-radius: 10px;
+      padding: 12px 28px; font-size: 0.9rem; font-weight: 800;
+      cursor: pointer; font-family: 'Space Grotesk', sans-serif;
+      transition: all 0.2s;
+    }
+    .btn-submit-quiz:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,229,160,0.3); }
+
+    /* ── RESULT SCREEN ── */
+    #resultScreen { padding: 30px 16px; }
+    .result-container { max-width: 860px; margin: auto; }
+
+    .header-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px; padding: 28px 32px; margin-bottom: 20px;
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 16px;
+      box-shadow: var(--card-shadow);
+      position: relative; overflow: hidden;
+    }
+    .header-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+    }
+    .header-info h1 { font-size: 1.5rem; font-weight: 800; color: white; }
+    .header-info p  { font-size: 0.88rem; color: var(--muted); margin-top: 6px; font-family: 'JetBrains Mono', monospace; }
+
+    .score-badge {
+      background: rgba(0,212,255,0.08);
+      border: 1px solid rgba(0,212,255,0.25);
+      border-radius: 12px; padding: 14px 24px; text-align: center;
+    }
+    .score-badge .big {
+      font-size: 2.4rem; font-weight: 800;
+      color: var(--accent); font-family: 'JetBrains Mono', monospace;
+    }
+    .score-badge .slbl {
+      font-size: 0.72rem; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 1px;
+    }
+
+    .summary-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 20px; }
+    .sum-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 18px; text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    .sum-card.st { border-top: 3px solid var(--accent); }
+    .sum-card.sc { border-top: 3px solid var(--green); }
+    .sum-card.sw { border-top: 3px solid var(--red); }
+    .sum-card.ss { border-top: 3px solid var(--yellow); }
+    .sum-card .num { font-size: 1.8rem; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
+    .sum-card.st .num { color: var(--accent); }
+    .sum-card.sc .num { color: var(--green); }
+    .sum-card.sw .num { color: var(--red); }
+    .sum-card.ss .num { color: var(--yellow); }
+    .sum-card .stxt { font-size: 0.78rem; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .toggle-bar {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 14px 20px; margin-bottom: 20px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .toggle-bar label { font-weight: 600; font-size: 0.9rem; cursor: pointer; color: var(--text); }
+    .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .tslider { position: absolute; cursor: pointer; top:0;left:0;right:0;bottom:0; background: var(--border); border-radius: 24px; transition:.3s; }
+    .tslider:before { content:""; position:absolute; height:18px;width:18px;left:3px;bottom:3px;background:white;border-radius:50%;transition:.3s; }
+    input:checked + .tslider { background: var(--accent); }
+    input:checked + .tslider:before { transform: translateX(20px); }
+    .toggle-hint { color: var(--muted); font-size: 0.82rem; margin-left: auto; }
+
+    /* Review cards */
+    .rqcard {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px; margin-bottom: 16px; overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      border-left: 4px solid var(--border);
+      transition: transform 0.15s;
+    }
+    .rqcard:hover { transform: translateY(-2px); }
+    .rqcard.rcc { border-left-color: var(--green); }
+    .rqcard.rwc { border-left-color: var(--red); }
+    .rqcard.rsc { border-left-color: var(--yellow); }
+
+    .rch { display:flex; justify-content:space-between; align-items:flex-start; padding:18px 20px 12px; gap:12px; }
+    .rqn { font-family: 'JetBrains Mono', monospace; font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--muted); margin-bottom:6px; }
+    .rqt { font-size:0.98rem; font-weight:600; color:white; line-height:1.5; }
+
+    .mbadge { white-space:nowrap; padding:5px 13px; border-radius:20px; font-size:0.82rem; font-weight:700; font-family: 'JetBrains Mono', monospace; }
+    .mpos { background:rgba(0,229,160,0.12); color:var(--green); border: 1px solid rgba(0,229,160,0.3); }
+    .mneg { background:rgba(255,71,87,0.12); color:var(--red); border: 1px solid rgba(255,71,87,0.3); }
+    .mzer { background:rgba(255,211,42,0.08); color:var(--yellow); border: 1px solid rgba(255,211,42,0.2); }
+
+    .rcb { padding:0 20px 18px; display:flex; flex-direction:column; gap:10px; }
+
+    .rog { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px; }
+    .roi {
+      padding:9px 12px; border-radius:8px; font-size:0.87rem;
+      background:var(--surface2); border:1.5px solid var(--border);
+      color:var(--muted);
+    }
+    .roi.rboth { background:rgba(0,229,160,0.1); border-color:rgba(0,229,160,0.4); color:#a7f3d0; font-weight:700; }
+    .roi.rcorropt { background:rgba(0,229,160,0.08); border-color:rgba(0,229,160,0.3); color:#6ee7b7; font-weight:600; }
+    .roi.rwsel { background:rgba(255,71,87,0.1); border-color:rgba(255,71,87,0.3); color:#fca5a5; font-weight:600; }
+
+    .rar { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:8px; font-size:0.9rem; }
+    .rar.rcand { background:var(--surface2); border: 1px solid var(--border); }
+    .rar.rcorr { background:rgba(0,229,160,0.07); border: 1px solid rgba(0,229,160,0.2); }
+    .rar .rtag { font-family:'JetBrains Mono',monospace; font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; min-width:85px; color:var(--muted); }
+    .rar.rcorr .rtag { color:var(--green); }
+    .rskip { font-style:italic; color:var(--muted); font-size:0.87rem; }
+
+    .footer { text-align:center; margin-top:32px; padding:20px; color:var(--muted); font-size:0.82rem; font-family:'JetBrains Mono',monospace; }
+
+    .error-box {
+      background: rgba(255,71,87,0.1); border: 1px solid rgba(255,71,87,0.3);
+      color: var(--red); border-radius: 12px; padding: 16px 20px;
+      margin-bottom: 16px; font-size: 0.9rem; display: none;
+    }
+    .error-box.show { display: block; }
+
+    @media(max-width:560px){
+      .summary-row{grid-template-columns:repeat(2,1fr);}
+      .header-card{flex-direction:column;text-align:center;}
+      .rog{grid-template-columns:1fr;}
+      .start-card{padding:32px 24px;}
+      .info-grid{grid-template-columns:1fr 1fr;}
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════ START SCREEN ═══════════════ -->
+<div id="startScreen" class="screen active">
+  <div class="start-card">
+    <div class="start-icon">⚡</div>
+    <h1>Tech <span>Quiz</span></h1>
+    <p class="sub">Choose a topic and test your tech knowledge!</p>
+
+    <div class="name-input-wrap">
+      <label>Your Name</label>
+      <input type="text" id="candidateName" placeholder="Enter your full name..." maxlength="60" />
+    </div>
+
+    <div class="topic-select-wrap">
+      <label>Choose a Topic</label>
+      <select id="topicSelect">
+        <option value="JavaScript">JavaScript</option>
+        <option value="Python">Python</option>
+        <option value="Data Structures & Algorithms">Data Structures & Algorithms</option>
+        <option value="Computer Networks">Computer Networks</option>
+        <option value="Operating Systems">Operating Systems</option>
+        <option value="Databases & SQL">Databases & SQL</option>
+        <option value="Cloud Computing & AWS">Cloud Computing & AWS</option>
+        <option value="Cybersecurity">Cybersecurity</option>
+        <option value="Machine Learning">Machine Learning</option>
+        <option value="React & Frontend">React & Frontend</option>
+        <option value="System Design">System Design</option>
+        <option value="Git & DevOps">Git & DevOps</option>
+      </select>
+    </div>
+
+    <div class="info-grid">
+      <div class="info-item"><div class="val">10</div><div class="key">Questions</div></div>
+      <div class="info-item"><div class="val">+1</div><div class="key">Correct</div></div>
+      <div class="info-item"><div class="val">−0.25</div><div class="key">Wrong</div></div>
+      <div class="info-item"><div class="val">0</div><div class="key">Skipped</div></div>
+    </div>
+
+    <div class="error-box" id="startError"></div>
+    <button class="btn-start" onclick="startQuiz()">Start Quiz &rarr;</button>
+  </div>
+</div>
+
+<!-- ═══════════════ QUIZ SCREEN ═══════════════ -->
+<div id="quizScreen" class="screen">
+  <div class="quiz-container">
+    <div class="quiz-topbar">
+      <div class="q-counter" id="qCounter">Q 01 / 10</div>
+      <div class="user-tag" id="quizUserTag">Candidate</div>
+    </div>
+    <div class="progress-wrap"><div class="progress-fill" id="progressFill" style="width:10%"></div></div>
+
+    <div class="question-box">
+      <div class="q-label" id="topicLabel">Tech</div>
+      <h2 id="qText"></h2>
+      <div class="options-list" id="optionsList"></div>
+    </div>
+
+    <div class="feedback" id="feedbackBox">
+      <span id="feedbackIcon"></span>
+      <span id="feedbackText"></span>
+    </div>
+
+    <div class="nav-row" id="navRow"></div>
+  </div>
+</div>
+
+<!-- ═══════════════ RESULT SCREEN ═══════════════ -->
+<div id="resultScreen" class="screen">
+  <div class="result-container">
+    <div class="header-card">
+      <div class="header-info">
+        <h1 id="resultName">Candidate</h1>
+        <p id="resultSubtitle">Tech Quiz · Completed</p>
+      </div>
+      <div class="score-badge">
+        <div class="big" id="finalScoreDisplay">0 / 10</div>
+        <div class="slbl">Final Score</div>
+      </div>
+    </div>
+
+    <div class="summary-row">
+      <div class="sum-card st"><div class="num">10</div><div class="stxt">Total</div></div>
+      <div class="sum-card sc"><div class="num" id="rCorrect">0</div><div class="stxt">Correct</div></div>
+      <div class="sum-card sw"><div class="num" id="rWrong">0</div><div class="stxt">Wrong</div></div>
+      <div class="sum-card ss"><div class="num" id="rSkipped">0</div><div class="stxt">Skipped</div></div>
+    </div>
+
+    <div class="toggle-bar">
+      <label class="switch"><input type="checkbox" id="showCorrect" checked><span class="tslider"></span></label>
+      <label for="showCorrect">Show Correct Answers</label>
+      <span class="toggle-hint">Toggle to hide/show</span>
+    </div>
+
+    <div id="reviewContainer"></div>
+    <div class="footer">ExamPortal · <span id="footerName"></span> · <span id="footerTopic"></span></div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════
+//  QUESTION BANK (no API needed)
+// ══════════════════════════════════════════════════
+const questionBank = {
+  "JavaScript": [
+    { text: "Which keyword declares a block-scoped variable in JavaScript?", options: ["var", "let", "define", "set"], correct: 1 },
+    { text: "What does `typeof null` return in JavaScript?", options: ["'null'", "'undefined'", "'object'", "'boolean'"], correct: 2 },
+    { text: "Which method adds an element to the END of an array?", options: ["push()", "pop()", "shift()", "unshift()"], correct: 0 },
+    { text: "What is the output of `2 + '2'` in JavaScript?", options: ["4", "'22'", "22", "NaN"], correct: 1 },
+    { text: "Which symbol is used for arrow functions?", options: ["->", "=>", "::", ">>"], correct: 1 },
+    { text: "What does `===` check in JavaScript?", options: ["Value only", "Type only", "Value and type", "Reference"], correct: 2 },
+    { text: "Which built-in method returns the length of a string?", options: [".size()", ".length", ".count()", ".len()"], correct: 1 },
+    { text: "What does `Array.isArray([])` return?", options: ["false", "undefined", "null", "true"], correct: 3 },
+    { text: "Which method is used to parse a JSON string?", options: ["JSON.stringify()", "JSON.parse()", "JSON.convert()", "JSON.decode()"], correct: 1 },
+    { text: "What is a closure in JavaScript?", options: ["A loop that never ends", "A function with access to its outer scope", "A way to close browser tabs", "An HTML closing tag"], correct: 1 }
+  ],
+  "Python": [
+    { text: "Which of the following is used to define a function in Python?", options: ["function", "def", "fun", "define"], correct: 1 },
+    { text: "What is the output of `print(type([]))` ?", options: ["<class 'tuple'>", "<class 'dict'>", "<class 'list'>", "<class 'set'>"], correct: 2 },
+    { text: "Which operator is used for floor division in Python?", options: ["/", "//", "%", "**"], correct: 1 },
+    { text: "What does `len('hello')` return?", options: ["4", "6", "5", "None"], correct: 2 },
+    { text: "Which keyword is used to handle exceptions in Python?", options: ["catch", "except", "error", "handle"], correct: 1 },
+    { text: "What is a lambda function?", options: ["A named function", "A class method", "An anonymous inline function", "A recursive function"], correct: 2 },
+    { text: "How do you start a comment in Python?", options: ["//", "/*", "#", "--"], correct: 2 },
+    { text: "Which data type is immutable in Python?", options: ["list", "dict", "set", "tuple"], correct: 3 },
+    { text: "What does `range(3)` produce?", options: ["[1,2,3]", "[0,1,2,3]", "[0,1,2]", "[1,2]"], correct: 2 },
+    { text: "Which method removes and returns the last item of a list?", options: ["remove()", "delete()", "pop()", "discard()"], correct: 2 }
+  ],
+  "Data Structures & Algorithms": [
+    { text: "What is the time complexity of binary search?", options: ["O(n)", "O(n²)", "O(log n)", "O(1)"], correct: 2 },
+    { text: "Which data structure uses LIFO (Last In First Out)?", options: ["Queue", "Stack", "Linked List", "Tree"], correct: 1 },
+    { text: "What is the worst-case time complexity of QuickSort?", options: ["O(n log n)", "O(n)", "O(n²)", "O(log n)"], correct: 2 },
+    { text: "Which data structure uses FIFO (First In First Out)?", options: ["Stack", "Tree", "Graph", "Queue"], correct: 3 },
+    { text: "What does BFS stand for?", options: ["Binary First Search", "Breadth First Search", "Base First Sort", "Boolean Fast Search"], correct: 1 },
+    { text: "Which sorting algorithm has best average-case performance?", options: ["Bubble Sort", "Insertion Sort", "Merge Sort", "Selection Sort"], correct: 2 },
+    { text: "What is the space complexity of a recursive Fibonacci function?", options: ["O(1)", "O(log n)", "O(n)", "O(n²)"], correct: 2 },
+    { text: "In a binary tree, what is the maximum nodes at level `l`?", options: ["l", "2^l", "2l", "l²"], correct: 1 },
+    { text: "Which data structure is used in DFS traversal?", options: ["Queue", "Heap", "Stack", "Array"], correct: 2 },
+    { text: "What is a hash collision?", options: ["When two keys map to the same index", "When a hash table is full", "When a key is not found", "When hashing fails"], correct: 0 }
+  ],
+  "Computer Networks": [
+    { text: "What does HTTP stand for?", options: ["HyperText Transfer Protocol", "High Tech Transfer Process", "Hyper Transfer Text Program", "Host Text Transfer Protocol"], correct: 0 },
+    { text: "Which layer of OSI model handles routing?", options: ["Data Link", "Transport", "Network", "Session"], correct: 2 },
+    { text: "What is the default port for HTTPS?", options: ["80", "21", "8080", "443"], correct: 3 },
+    { text: "What does DNS stand for?", options: ["Domain Name System", "Data Network Service", "Dynamic Node Server", "Digital Name Service"], correct: 0 },
+    { text: "Which protocol is used to send emails?", options: ["FTP", "SMTP", "HTTP", "SSH"], correct: 1 },
+    { text: "What is a MAC address?", options: ["A software address", "A physical hardware address", "An IP alias", "A DNS record"], correct: 1 },
+    { text: "How many layers does the OSI model have?", options: ["4", "5", "6", "7"], correct: 3 },
+    { text: "What does IP in TCP/IP stand for?", options: ["Internal Protocol", "Internet Protocol", "Input Packet", "Interface Port"], correct: 1 },
+    { text: "Which device connects different networks together?", options: ["Switch", "Hub", "Router", "Repeater"], correct: 2 },
+    { text: "What is the purpose of a subnet mask?", options: ["To encrypt data", "To identify the network portion of an IP", "To assign MAC addresses", "To speed up DNS"], correct: 1 }
+  ],
+  "Databases & SQL": [
+    { text: "What does SQL stand for?", options: ["Structured Query Language", "Simple Question Language", "System Query Logic", "Sequential Query List"], correct: 0 },
+    { text: "Which SQL command retrieves data from a table?", options: ["INSERT", "UPDATE", "SELECT", "DELETE"], correct: 2 },
+    { text: "What is a PRIMARY KEY?", options: ["A key that can be null", "A key that uniquely identifies a row", "A foreign key reference", "An index key"], correct: 1 },
+    { text: "Which JOIN returns all rows from both tables?", options: ["INNER JOIN", "LEFT JOIN", "RIGHT JOIN", "FULL OUTER JOIN"], correct: 3 },
+    { text: "What does `GROUP BY` do in SQL?", options: ["Sorts rows", "Groups rows with same values", "Filters rows", "Joins tables"], correct: 1 },
+    { text: "Which keyword filters groups in SQL?", options: ["WHERE", "HAVING", "FILTER", "GROUP"], correct: 1 },
+    { text: "What is normalization in databases?", options: ["Encrypting data", "Backing up data", "Reducing data redundancy", "Indexing tables"], correct: 2 },
+    { text: "Which command removes all rows from a table but keeps the structure?", options: ["DROP", "DELETE", "REMOVE", "TRUNCATE"], correct: 3 },
+    { text: "What is a FOREIGN KEY?", options: ["A key from another database", "A column referencing a primary key in another table", "An encrypted key", "A composite key"], correct: 1 },
+    { text: "Which SQL aggregate function returns the number of rows?", options: ["SUM()", "AVG()", "COUNT()", "MAX()"], correct: 2 }
+  ],
+  "Machine Learning": [
+    { text: "What type of learning uses labeled data?", options: ["Unsupervised", "Reinforcement", "Supervised", "Semi-supervised"], correct: 2 },
+    { text: "What does overfitting mean?", options: ["Model is too simple", "Model performs well on training but poorly on new data", "Model has no parameters", "Model trains too slowly"], correct: 1 },
+    { text: "Which algorithm is used for classification and regression?", options: ["K-Means", "PCA", "Decision Tree", "DBSCAN"], correct: 2 },
+    { text: "What is gradient descent used for?", options: ["Data cleaning", "Minimizing loss function", "Splitting datasets", "Encoding labels"], correct: 1 },
+    { text: "What does CNN stand for?", options: ["Computed Neural Network", "Convolutional Neural Network", "Connected Node Network", "Conditional Net Node"], correct: 1 },
+    { text: "Which metric measures classification accuracy?", options: ["MSE", "RMSE", "F1 Score", "R²"], correct: 2 },
+    { text: "What is K-Means used for?", options: ["Classification", "Regression", "Clustering", "Dimensionality reduction"], correct: 2 },
+    { text: "What is the purpose of a train/test split?", options: ["To speed up training", "To evaluate model on unseen data", "To clean data", "To reduce features"], correct: 1 },
+    { text: "What does ReLU stand for?", options: ["Relative Linear Unit", "Rectified Linear Unit", "Recursive Learning Unit", "Real Linear Update"], correct: 1 },
+    { text: "Which technique reduces overfitting by randomly dropping neurons?", options: ["Batch Norm", "Dropout", "Pooling", "Padding"], correct: 1 }
+  ],
+  "React & Frontend": [
+    { text: "What is JSX in React?", options: ["A database query language", "JavaScript XML syntax extension", "A CSS framework", "A testing tool"], correct: 1 },
+    { text: "Which hook is used to manage state in a functional component?", options: ["useEffect", "useRef", "useState", "useContext"], correct: 2 },
+    { text: "What does the virtual DOM do?", options: ["Directly updates HTML", "Minimizes real DOM updates for performance", "Stores CSS styles", "Handles HTTP requests"], correct: 1 },
+    { text: "Which hook runs side effects in React?", options: ["useState", "useEffect", "useMemo", "useCallback"], correct: 1 },
+    { text: "What is a prop in React?", options: ["Internal component state", "A CSS property", "Data passed from parent to child component", "A lifecycle method"], correct: 2 },
+    { text: "What does `key` prop help React with in lists?", options: ["Styling list items", "Identifying which items changed", "Sorting the list", "Counting items"], correct: 1 },
+    { text: "Which CSS unit is relative to the viewport width?", options: ["px", "em", "rem", "vw"], correct: 3 },
+    { text: "What is the CSS box model?", options: ["A 3D layout system", "Content, padding, border and margin", "A flexbox property", "A grid system"], correct: 1 },
+    { text: "Which HTML tag is used for a clickable button?", options: ["<click>", "<input type='submit'>", "<button>", "Both B and C"], correct: 3 },
+    { text: "What does `position: absolute` do in CSS?", options: ["Sticks element to viewport", "Positions relative to nearest positioned ancestor", "Removes element from flow statically", "Floats the element"], correct: 1 }
+  ],
+  "Git & DevOps": [
+    { text: "What does `git clone` do?", options: ["Creates a new branch", "Copies a repository locally", "Merges two branches", "Deletes a repo"], correct: 1 },
+    { text: "Which command stages changes in Git?", options: ["git commit", "git push", "git add", "git merge"], correct: 2 },
+    { text: "What is a pull request (PR)?", options: ["Pulling code from server", "A request to merge code into another branch", "Downloading dependencies", "A CI/CD trigger"], correct: 1 },
+    { text: "What does CI/CD stand for?", options: ["Code Integration / Code Deployment", "Continuous Integration / Continuous Delivery", "Central Index / Central Deploy", "Compile Install / Compile Deploy"], correct: 1 },
+    { text: "Which command undoes the last commit but keeps changes staged?", options: ["git revert", "git reset --hard", "git reset --soft HEAD~1", "git checkout"], correct: 2 },
+    { text: "What is Docker used for?", options: ["Version control", "Containerizing applications", "Database management", "Network monitoring"], correct: 1 },
+    { text: "What does `git stash` do?", options: ["Deletes uncommitted changes", "Temporarily saves uncommitted changes", "Pushes to remote", "Creates a tag"], correct: 1 },
+    { text: "What is a Dockerfile?", options: ["A Git config file", "Instructions to build a Docker image", "A CI pipeline file", "An environment variable file"], correct: 1 },
+    { text: "Which git command shows commit history?", options: ["git status", "git diff", "git log", "git show"], correct: 2 },
+    { text: "What does `git merge` do?", options: ["Deletes a branch", "Combines two branches together", "Resets commit history", "Clones a repository"], correct: 1 }
+  ]
+};
+
+// ══════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════
+let questions = [];
+let current = 0;
+let answers = [];
+let answered = false;
+let selectedOpt = null;
+let currentTopic = '';
+let candidateName = '';
+
+// ══════════════════════════════════════════════════
+//  SCREEN HELPERS
+// ══════════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ══════════════════════════════════════════════════
+//  START QUIZ (no API)
+// ══════════════════════════════════════════════════
+function startQuiz() {
+  const nameInput = document.getElementById('candidateName').value.trim();
+  const topic = document.getElementById('topicSelect').value;
+  const errBox = document.getElementById('startError');
+  errBox.classList.remove('show');
+
+  if (!nameInput) {
+    errBox.textContent = '⚠️ Please enter your name before starting.';
+    errBox.classList.add('show');
+    document.getElementById('candidateName').focus();
+    return;
+  }
+
+  candidateName = nameInput;
+  currentTopic = topic;
+
+  // Pick questions for selected topic, fallback to JS
+  const pool = questionBank[topic] || questionBank["JavaScript"];
+  questions = pool.slice(0, 10);
+  answers = Array(questions.length).fill(null);
+  current = 0;
+  answered = false;
+  selectedOpt = null;
+
+  document.getElementById('quizUserTag').textContent = candidateName;
+  document.getElementById('topicLabel').textContent = topic;
+
+  showScreen('quizScreen');
+  renderQuestion();
+}
+
+// ══════════════════════════════════════════════════
+//  RENDER QUESTION
+// ══════════════════════════════════════════════════
+function renderQuestion() {
+  answered = false;
+  selectedOpt = null;
+
+  const q = questions[current];
+  const total = questions.length;
+  const num = String(current + 1).padStart(2, '0');
+  const tot = String(total).padStart(2, '0');
+
+  document.getElementById('qCounter').textContent = `Q ${num} / ${tot}`;
+  document.getElementById('progressFill').style.width = `${((current + 1) / total) * 100}%`;
+  document.getElementById('qText').textContent = q.text;
+
+  const list = document.getElementById('optionsList');
+  list.innerHTML = '';
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn';
+    btn.innerHTML = `<span class="opt-letter">${String.fromCharCode(65 + i)}</span><span>${opt}</span>`;
+    btn.onclick = () => selectOption(i);
+    list.appendChild(btn);
+  });
+
+  document.getElementById('feedbackBox').className = 'feedback';
+  renderNav();
+}
+
+// ══════════════════════════════════════════════════
+//  SELECT OPTION
+// ══════════════════════════════════════════════════
+function selectOption(idx) {
+  if (answered) return;
+  selectedOpt = idx;
+  document.querySelectorAll('.opt-btn').forEach((btn, i) => {
+    btn.classList.toggle('selected', i === idx);
+  });
+  renderNav();
+}
+
+// ══════════════════════════════════════════════════
+//  RENDER NAV
+// ══════════════════════════════════════════════════
+function renderNav() {
+  const nav = document.getElementById('navRow');
+  const isLast = current === questions.length - 1;
+  if (!answered) {
+    nav.innerHTML = `
+      <button class="btn-skip" onclick="skipQuestion()">Skip</button>
+      <button class="btn-next" onclick="submitAnswer()" ${selectedOpt === null ? 'disabled' : ''}>Confirm Answer</button>
+    `;
+  } else {
+    nav.innerHTML = isLast
+      ? `<button class="btn-submit-quiz" onclick="showResults()">See Results &#8594;</button>`
+      : `<button class="btn-next" onclick="nextQuestion()">Next &#8594;</button>`;
+  }
+}
+
+// ══════════════════════════════════════════════════
+//  SUBMIT — no feedback shown during quiz
+// ══════════════════════════════════════════════════
+function submitAnswer() {
+  if (selectedOpt === null || answered) return;
+  answered = true;
+  answers[current] = selectedOpt;
+  document.querySelectorAll('.opt-btn').forEach(btn => { btn.disabled = true; });
+  document.getElementById('feedbackBox').className = 'feedback';
+  renderNav();
+}
+
+// ══════════════════════════════════════════════════
+//  SKIP
+// ══════════════════════════════════════════════════
+function skipQuestion() {
+  answered = true;
+  answers[current] = null;
+  document.querySelectorAll('.opt-btn').forEach(b => b.disabled = true);
+  document.getElementById('feedbackBox').className = 'feedback';
+  renderNav();
+}
+
+// ══════════════════════════════════════════════════
+//  NEXT
+// ══════════════════════════════════════════════════
+function nextQuestion() { current++; renderQuestion(); }
+
+// ══════════════════════════════════════════════════
+//  RESULTS
+// ══════════════════════════════════════════════════
+function showResults() {
+  let correct = 0, wrong = 0, skipped = 0, score = 0;
+  answers.forEach((a, i) => {
+    if (a === null) skipped++;
+    else if (a === questions[i].correct) { correct++; score += 1; }
+    else { wrong++; score -= 0.25; }
+  });
+
+  document.getElementById('finalScoreDisplay').textContent = `${score.toFixed(2)} / ${questions.length}`;
+  document.getElementById('rCorrect').textContent = correct;
+  document.getElementById('rWrong').textContent = wrong;
+  document.getElementById('rSkipped').textContent = skipped;
+  document.getElementById('resultSubtitle').textContent = `${currentTopic} Quiz · Completed`;
+  document.getElementById('resultName').textContent = candidateName;
+  document.getElementById('footerName').textContent = candidateName;
+  document.getElementById('footerTopic').textContent = currentTopic;
+
+  renderReview(true);
+  document.getElementById('showCorrect').onchange = function() { renderReview(this.checked); };
+  showScreen('resultScreen');
+  window.scrollTo({ top: 0 });
+}
+
+// ══════════════════════════════════════════════════
+//  REVIEW CARDS
+// ══════════════════════════════════════════════════
+function renderReview(showCorrect) {
+  const container = document.getElementById('reviewContainer');
+  container.innerHTML = '';
+
+  questions.forEach((q, idx) => {
+    const si = answers[idx];
+    const ci = q.correct;
+    const status = si === null ? 'skip' : si === ci ? 'correct' : 'wrong';
+    const marksObtained = si === null ? 0 : si === ci ? 1 : -0.25;
+    const cardCls = status === 'correct' ? 'rcc' : status === 'wrong' ? 'rwc' : 'rsc';
+
+    let opts = '<div class="rog">';
+    q.options.forEach((opt, i) => {
+      let cls = 'roi';
+      const iC = i === ci, iS = i === si;
+      if (iC && iS) cls += ' rboth';
+      else if (iS && status === 'wrong') cls += ' rwsel';
+      else if (iC && showCorrect) cls += ' rcorropt';
+      opts += `<div class="${cls}">${String.fromCharCode(65+i)}. ${opt}</div>`;
+    });
+    opts += '</div>';
+
+    let candRow = si === null
+      ? `<div class="rar rcand"><span class="rtag">Your Answer</span><span class="rskip">Not attempted</span></div>`
+      : `<div class="rar rcand"><span class="rtag">Your Answer</span><span>${status==='correct'?'✅':'❌'}</span><strong>${String.fromCharCode(65+si)}. ${q.options[si]}</strong></div>`;
+
+    let corrRow = '';
+    if (showCorrect && status !== 'correct') {
+      corrRow = `<div class="rar rcorr"><span class="rtag">Correct</span><span>✅</span><strong>${String.fromCharCode(65+ci)}. ${q.options[ci]}</strong></div>`;
+    }
+
+    const mb = marksObtained > 0
+      ? `<span class="mbadge mpos">+${marksObtained}</span>`
+      : marksObtained < 0
+      ? `<span class="mbadge mneg">${marksObtained}</span>`
+      : `<span class="mbadge mzer">0</span>`;
+
+    const card = document.createElement('div');
+    card.className = `rqcard ${cardCls}`;
+    card.innerHTML = `
+      <div class="rch">
+        <div>
+          <div class="rqn">Question ${idx+1} / ${questions.length}</div>
+          <div class="rqt">${q.text}</div>
+        </div>
+        ${mb}
+      </div>
+      <div class="rcb">${opts}${candRow}${corrRow}</div>
+    `;
+    container.appendChild(card);
+  });
+}
+</script>
+</body>
+</html>
+</html>
