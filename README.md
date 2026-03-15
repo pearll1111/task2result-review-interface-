@@ -74,11 +74,9 @@ Then open `http://localhost:8080` in your browser.
 
 ```
 *result-review-interface
-├── index.html      ← (single file)
+├── index.html      ← (code file)
 ├── README.md       ← Documentation
-├── .gitignore      ← Git ignore rules
 ├── CHANGELOG.md    ← Version history
-└── LICENSE         ← MIT License
 ---
 
 ## 🎮 How to Play
